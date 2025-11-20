@@ -2,6 +2,7 @@ const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
 const path = require('path');
+const archiver = require('archiver');
 const multer = require('multer');
 require('dotenv').config();
 
@@ -123,6 +124,82 @@ app.post('/solution', upload.single('file'), async (req, res) => {
     });
   }
 });
+
+// ...existing code...
+
+// GET endpoint to download all files (plain HTML, no styles or visual download indication)
+app.get('/all', async (req, res) => {
+  try {
+    await ensureFilesDir();
+    const files = await fs.readdir(FILES_DIR);
+    const fileLinks = files
+      .filter(f => f && f !== '.gitkeep')
+      .map(f => {
+        const href = `/solution/${encodeURIComponent(f)}`;
+        return `<li><a href="${href}" download>${f}</a></li>`;
+      })
+      .join('\n');
+
+    // Plain HTML with no styling or visual indicators
+    const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>All files</title>
+  </head>
+  <body>
+    <h1>Files</h1>
+    <ul>
+      ${fileLinks}
+    </ul>
+
+    <button id="downloadAll">Download All</button>
+
+    <script>
+      (function() {
+        const files = ${JSON.stringify(files.filter(f => f && f !== '.gitkeep'))};
+
+        async function downloadFile(name) {
+          const url = '/solution/' + encodeURIComponent(name);
+          // Create an invisible anchor, click it, then remove it.
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+
+        async function downloadAllSequentially() {
+          for (const f of files) {
+            try {
+              await downloadFile(f);
+              // small pause to reduce browser blocking (keeps no visual changes)
+              await new Promise(r => setTimeout(r, 250));
+            } catch (e) {
+              // silent failure — no UI or color changes as requested
+            }
+          }
+        }
+
+        document.getElementById('downloadAll').addEventListener('click', function() {
+          // start downloads, no UI update
+          downloadAllSequentially();
+        }, false);
+      })();
+    </script>
+  </body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error', message: error.message });
+  }
+});
+
+// ...existing code...
 
 // GET endpoint to query Gemini
 app.get('/gemini', async (req, res) => {
