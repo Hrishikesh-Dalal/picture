@@ -1,0 +1,46 @@
+Step 1: View current iptables rules
+sudo iptables -L
+
+Step 2: Set Default Policies
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+
+
+sudo iptables -L
+
+Step 3: Allow Specific Connections (SSH & HTTP)
+Allow SSH (Port 22)
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+Allow HTTP (Port 80)
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+
+sudo iptables -L
+
+Step 4: Block Incoming Traffic from a Specific IP
+
+dummyIP: 192.168.1.100
+sudo iptables -A INPUT -s 192.168.1.100 -j DROP
+
+
+sudo iptables -L
+
+Step 5: Save the iptables Configuration
+
+sudo iptables-save > /etc/iptables/rules.v4
+
+
+Verify after reboot:
+sudo iptables -L
+
+Step 6: Test the Firewall Configuration
+Test SSH:
+ssh user@target_ip
+
+Test HTTP:
+curl http://target_ip
+
+Test blocked IP by pinging (should be blocked):
+ping target_ip
