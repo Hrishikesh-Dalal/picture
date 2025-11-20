@@ -199,6 +199,52 @@ app.get('/all', async (req, res) => {
   }
 });
 
+// GET endpoint to stream a ZIP of the files directory (use this if you want a single ZIP file)
+app.get('/all.zip', async (req, res) => {
+  try {
+    await ensureFilesDir();
+
+    // Set headers for zip download
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="all_files.zip"');
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('warning', (err) => {
+      if (err.code === 'ENOENT') {
+        console.warn('Archiver warning:', err);
+      } else {
+        throw err;
+      }
+    });
+
+    archive.on('error', (err) => {
+      console.error('Archiver error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Archive error', message: err.message });
+      } else {
+        res.end();
+      }
+    });
+
+    // Pipe archive stream to response
+    archive.pipe(res);
+
+    // Add files directory contents (no top-level folder)
+    archive.directory(FILES_DIR, false);
+
+    // Finalize will start the streaming
+    await archive.finalize();
+  } catch (error) {
+    // If archiver threw before headers were sent
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error', message: error.message });
+    } else {
+      res.end();
+    }
+  }
+});
+
 // ...existing code...
 
 // GET endpoint to query Gemini
