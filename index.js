@@ -42,6 +42,9 @@ const upload = multer({
 });
 
 // Initialize files directory on startup
+// This call is intentionally not awaited here as Multer's destination function
+// also calls and awaits `ensureFilesDir` before any file is written.
+// The IIFE at the bottom also ensures it's created before the server starts listening.
 ensureFilesDir();
 
 // GET endpoint for code solution by filename
@@ -124,8 +127,6 @@ app.post('/solution', upload.single('file'), async (req, res) => {
     });
   }
 });
-
-// ...existing code...
 
 // GET endpoint to download all files (plain HTML, no styles or visual download indication)
 app.get('/all', async (req, res) => {
@@ -245,8 +246,6 @@ app.get('/all.zip', async (req, res) => {
   }
 });
 
-// ...existing code...
-
 // GET endpoint to query Gemini
 app.get('/gemini', async (req, res) => {
   try {
@@ -302,7 +301,9 @@ app.get('/', (req, res) => {
       'GET /solution/:filename': 'Get a solution file by filename',
       'POST /solution': 'Upload a file directly (multipart/form-data, field: "file")',
       'GET /gemini?query=your question': 'Query Gemini AI',
-      'GET /health': 'Health check'
+      'GET /health': 'Health check',
+      'GET /all': 'List and download all files (HTML page)',
+      'GET /all.zip': 'Download all files as a single ZIP archive'
     }
   });
 });
@@ -310,8 +311,10 @@ app.get('/', (req, res) => {
 // Start server
 (async () => {
   await ensureFilesDir();
-  // app.listen(PORT, () => {
-  //   console.log(`Server is running on http://localhost:${PORT}`);
-  //   console.log(`Files directory: ${FILES_DIR}`);
-  // });
+  // BUG FIX: The app.listen call was commented out, preventing the server from starting.
+  // Uncommenting it to allow the application to function.
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Files directory: ${FILES_DIR}`);
+  });
 })();
