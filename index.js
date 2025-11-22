@@ -310,8 +310,8 @@ app.get('/', (req, res) => {
 // Start server
 (async () => {
   await ensureFilesDir();
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`Files directory: ${FILES_DIR}`);
-  });
+  // app.listen(PORT, () => {
+  //   console.log(`Server is running on http://localhost:${PORT}`);
+  //   console.log(`Files directory: ${FILES_DIR}`);
+  // });
 })();
