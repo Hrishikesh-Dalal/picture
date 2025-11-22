@@ -42,6 +42,7 @@ const upload = multer({
 });
 
 // Initialize files directory on startup
+// This is a fire-and-forget call. The `app.listen` block below will await `ensureFilesDir` more robustly.
 ensureFilesDir();
 
 // GET endpoint for code solution by filename
@@ -124,8 +125,6 @@ app.post('/solution', upload.single('file'), async (req, res) => {
     });
   }
 });
-
-// ...existing code...
 
 // GET endpoint to download all files (plain HTML, no styles or visual download indication)
 app.get('/all', async (req, res) => {
@@ -245,8 +244,6 @@ app.get('/all.zip', async (req, res) => {
   }
 });
 
-// ...existing code...
-
 // GET endpoint to query Gemini
 app.get('/gemini', async (req, res) => {
   try {
@@ -302,7 +299,9 @@ app.get('/', (req, res) => {
       'GET /solution/:filename': 'Get a solution file by filename',
       'POST /solution': 'Upload a file directly (multipart/form-data, field: "file")',
       'GET /gemini?query=your question': 'Query Gemini AI',
-      'GET /health': 'Health check'
+      'GET /health': 'Health check',
+      'GET /all': 'Get an HTML page to list and download all files',
+      'GET /all.zip': 'Download all files as a single ZIP archive'
     }
   });
 });
@@ -310,8 +309,8 @@ app.get('/', (req, res) => {
 // Start server
 (async () => {
   await ensureFilesDir();
-  // app.listen(PORT, () => {
-  //   console.log(`Server is running on http://localhost:${PORT}`);
-  //   console.log(`Files directory: ${FILES_DIR}`);
-  // });
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Files directory: ${FILES_DIR}`);
+  });
 })();
